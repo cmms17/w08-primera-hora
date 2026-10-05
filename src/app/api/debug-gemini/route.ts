@@ -13,7 +13,7 @@ export async function GET() {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const respuesta = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: "Responde solo con la palabra: hola",
     });
     return NextResponse.json({
