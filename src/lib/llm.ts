@@ -4,8 +4,9 @@ import { z } from "zod";
 
 // Modelo rápido del nivel gratuito de Gemini — apropiado para una
 // clasificación corta, no para razonamiento largo. Ver docs/PACKET.md
-// (Arquitectura + stack).
-const MODELO = "gemini-2.5-flash";
+// (Arquitectura + stack). gemini-2.5-flash fue retirado para cuentas
+// nuevas (oct 2026); gemini-3.8-flash es el reemplazo vigente.
+const MODELO = "gemini-3.8-flash";
 
 const esquemaClasificacion = z.object({
   severidad: z.enum(["baja", "media", "alta", "critica"]),
