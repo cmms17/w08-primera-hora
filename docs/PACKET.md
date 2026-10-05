@@ -157,3 +157,34 @@ del Blueprint de mi equipo, no esta pieza de software.
    "marcar como enviada" que un coordinador humano acciona después de revisar el borrador.
 9. Revisar el esquema completo → ningún campo guarda un dato real de paciente; todo lo que entra
    es texto de prueba etiquetado como simulado.
+
+**Resultado del pase mecánico (04/10/2026):** los 9 tests pasaron contra
+`https://w08-primera-hora-x22e.vercel.app`, incluyendo el auto-escalado por SLA (verificado en
+producción: dos incidentes de prueba pasaron de "nuevo" a "ESCALADO" solo por el paso del tiempo,
+sin ninguna acción manual) y la verificación de que `/api/panel/accion` es la única puerta para
+confirmar, marcar contenido o marcar un aviso como enviado.
+
+## Security Floor (5 checks)
+
+1. **Validación estricta de entrada.** Cada ruta (`/api/triage`, `/api/panel/accion`) valida el
+   cuerpo de la petición con `zod` antes de tocar la base de datos o el prompt de la IA —
+   longitudes máximas en cada campo (alias ≤80, sistema/tipo de dato ≤200, descripción ≤2000,
+   contraseña de prueba ≤200). Nada entra crudo al sistema.
+2. **La contraseña de prueba nunca se guarda.** `src/lib/pwned.ts` calcula el hash SHA-1
+   localmente y solo envía el prefijo de 5 caracteres a la API de Pwned Passwords (k-anonimato,
+   sin llave). La base de datos solo guarda un booleano (`password_comprometida`) — el valor de
+   la contraseña nunca sale de la función que la revisa, y nunca llega a `incidentes`.
+3. **RLS activado sin políticas públicas.** La tabla `incidentes` tiene Row Level Security
+   activado y cero policies para `anon`/`authenticated` — toda lectura y escritura pasa
+   exclusivamente por el servidor con la Service Role Key. No existe ningún endpoint que liste
+   incidentes sin pasar por `/panel` autenticado.
+4. **Ninguna decisión irreversible ocurre sola.** Confirmar, marcar contenido, marcar un aviso
+   como enviado o retirar un incidente solo pasan por `/api/panel/accion`, que exige una sesión
+   válida de Supabase Auth (`supabaseAuth.auth.getUser()`) antes de aplicar cualquier cambio.
+   Ningún proceso automático llama a esta ruta — el sistema clasifica y redacta, nunca decide ni
+   envía.
+5. **Degradación segura si algo externo falla.** Si Gemini no responde (saturación, red, límite
+   del nivel gratuito) o Pwned Passwords falla, el envío del incidente nunca se cae: se usa una
+   clasificación de respaldo clara ("no se pudo generar automáticamente") o el chequeo de
+   contraseña se marca explícitamente como "no se pudo revisar" — nunca se asume "segura" por
+   default cuando en realidad no se pudo verificar.
