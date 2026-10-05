@@ -1,0 +1,11 @@
+flowchart TD
+    A[Memo entra a /triage sin cuenta] --> B[Describe el incidente:\nsistema, tipo de dato, contrasena de prueba]
+    B --> C[Sistema revisa la contrasena\nvia Pwned Passwords k-anonimato]
+    B --> D[IA clasifica severidad y\ngenera checklist + borrador de aviso]
+    C --> E[Incidente guardado,\ncronometro SLA de 30 min inicia]
+    D --> E
+    E --> F{Coordinador confirma\ndentro de 30 min?}
+    F -->|Si| G[Estado: en manejo\npor el coordinador]
+    F -->|No, pasa el tiempo| H[Estado se auto-escala a\nESCALADO solo por calculo]
+    G --> I[Coordinador marca\ncontenido o envia aviso]
+    H --> I
