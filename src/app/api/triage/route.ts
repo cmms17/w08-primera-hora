@@ -82,6 +82,12 @@ export async function POST(request: Request) {
       {
         error: "El servidor no pudo procesar el reporte.",
         detalleTemporal: err instanceof Error ? err.message : String(err),
+        entornoDisponibleTemporal: {
+          url: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+          anonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+          serviceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          geminiKey: Boolean(process.env.GEMINI_API_KEY),
+        },
       },
       { status: 500 }
     );
