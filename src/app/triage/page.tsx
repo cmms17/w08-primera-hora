@@ -58,6 +58,36 @@ export default function Triage() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoTriage | null>(null);
+  const [copiado, setCopiado] = useState(false);
+
+  // Hallazgo del Persona Test (Memo): la única instrucción era "guarda esta
+  // pantalla", sin decir cómo ni dar ninguna forma de hacerlo. En el peor
+  // momento de su semana, eso es justo lo que se pierde si cierra la
+  // pestaña o se le va la conexión. Este botón copia todo como texto plano
+  // para que lo pegue donde quiera (WhatsApp, notas, correo).
+  async function copiarResumen() {
+    if (!resultado) return;
+    const texto = [
+      `Incidente reportado — Primera Hora`,
+      `Severidad: ${resultado.severidad.toUpperCase()}`,
+      `Estado: ${resultado.estado}`,
+      ``,
+      `Checklist de contención:`,
+      ...resultado.checklist.map((paso, i) => `${i + 1}. ${paso}`),
+      ``,
+      `Borrador de aviso (requiere revisión humana antes de enviar):`,
+      resultado.borradorAviso,
+      ``,
+      `ID del incidente: ${resultado.id}`,
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setCopiado(false);
+    }
+  }
 
   async function alEnviar(e: React.FormEvent) {
     e.preventDefault();
@@ -96,9 +126,22 @@ export default function Triage() {
           <div>
             <h1 className="text-lg font-bold text-slate-900">Incidente registrado</h1>
             <p className="text-xs text-slate-500">
-              Coordinación ya puede ver este caso en su cola. Guarda esta pantalla — no podrás
-              volver a verla sin iniciar sesión.
+              Coordinación ya puede ver este caso en su cola.
             </p>
+          </div>
+
+          <div className="rounded-xl px-4 py-3 bg-slate-900 text-white flex items-center justify-between gap-3">
+            <p className="text-xs leading-snug">
+              <strong>Toma captura de pantalla a esto ahora</strong> o copia la información.
+              No vas a poder volver a verla sin iniciar sesión como coordinador.
+            </p>
+            <button
+              type="button"
+              onClick={copiarResumen}
+              className="shrink-0 bg-white text-slate-900 text-xs font-bold rounded-lg px-3 py-2 whitespace-nowrap"
+            >
+              {copiado ? "✓ Copiado" : "Copiar todo"}
+            </button>
           </div>
 
           <CuentaRegresiva minutosIniciales={resultado.minutosRestantesSla} />
