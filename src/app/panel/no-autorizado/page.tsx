@@ -1,4 +1,6 @@
-import CerrarSesion from "../cerrar-sesion";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 export default function NoAutorizado() {
   return (
@@ -10,7 +12,12 @@ export default function NoAutorizado() {
           autorizados de Primera Hora. Si deberías tener acceso, pide que agreguen tu
           correo a la variable de entorno <code>COORDINADORES_AUTORIZADOS</code>.
         </p>
-        <CerrarSesion />
+        <Link
+          href="/panel/login"
+          className="inline-block w-full rounded-lg bg-slate-900 text-white text-sm font-semibold py-2"
+        >
+          Volver a iniciar sesión
+        </Link>
       </div>
     </main>
   );
