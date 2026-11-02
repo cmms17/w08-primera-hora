@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { crearClienteSupabaseAuth } from "@/lib/supabase/server-auth";
 import { crearClienteSupabaseServidor } from "@/lib/supabase/server";
+import { esCoordinadorAutorizado } from "@/lib/coordinadores";
 
 const cuerpoEsperado = z.object({
   incidenteId: z.string().uuid(),
@@ -21,6 +22,13 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Sesión no válida. Inicia sesión de nuevo." }, { status: 401 });
+  }
+
+  if (!esCoordinadorAutorizado(user.email)) {
+    return NextResponse.json(
+      { error: "Esta cuenta no está autorizada como coordinador." },
+      { status: 403 }
+    );
   }
 
   const cuerpo = await request.json().catch(() => null);

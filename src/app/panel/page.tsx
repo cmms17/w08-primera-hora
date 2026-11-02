@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { crearClienteSupabaseAuth } from "@/lib/supabase/server-auth";
 import { crearClienteSupabaseServidor } from "@/lib/supabase/server";
 import { calcularEstadoIncidente } from "@/lib/estado";
+import { esCoordinadorAutorizado } from "@/lib/coordinadores";
 import CerrarSesion from "./cerrar-sesion";
 import ListaIncidentes from "./lista-incidentes";
 
@@ -20,6 +21,10 @@ export default async function PanelCoordinador() {
 
   if (!user) {
     redirect("/panel/login");
+  }
+
+  if (!esCoordinadorAutorizado(user.email)) {
+    redirect("/panel/no-autorizado");
   }
 
   const supabase = crearClienteSupabaseServidor();

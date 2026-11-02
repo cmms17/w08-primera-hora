@@ -1,6 +1,38 @@
-# PACKET — Primera Hora: triage de incidentes para el proveedor de TI que responde una brecha (w08)
+# PACKET — Primera Hora (venture charter, Weeks 12–17)
 
-Business Bending · Cristina Meouchi (OPERATOR) · Repair Flow, Crystal Ball Studio · Team 8
+Venture Milestone · Cristina Meouchi (Money) · nace de Business Bending Week 8 (OPERATOR) ·
+confirmado como pick en THE VERDICT y en el BLUEPRINT de Team Bending.
+
+## Identidad del venture
+
+**Qué es:** el producto que un proveedor de TI freelance abre en el minuto exacto en que detecta
+algo raro en una pyme — triage de severidad, checklist de contención y borrador de aviso
+generados por IA, con un checkpoint humano obligatorio antes de cualquier acción irreversible.
+
+**Quién paga (Condición 5 del Blueprint — cerrada esta semana):** el proveedor de TI freelance
+(Memo), vía suscripción mensual baja, no la clínica. Memo ya cobra un retainer mensual a sus 3-4
+clientes por mantenimiento; Primera Hora es la herramienta que le permite prometer "respondo en
+la primera hora" sin contratar un segundo especialista — su ROI es defendible frente a su propio
+cliente desde el primer incidente real que maneje mejor. La clínica nunca ve ni paga la
+herramienta directamente; paga indirectamente, dentro del retainer de Memo, por una garantía que
+antes no existía.
+
+**Condiciones del Blueprint, honradas por diseño:**
+- *Condición 1 (ningún sistema decide o manda solo):* `/api/panel/accion` es la única puerta para
+  confirmar, marcar contenido o marcar un aviso enviado — nunca se llama automáticamente.
+- *Condición 2 (10:1 solo a nivel de proceso, no de resultado):* el Gate 2 del VERDICT ya lo deja
+  así — tiempo-a-primera-acción-estructurada, no daño contenido, hasta que exista un piloto.
+- *Condición 3 (todo lo simulado o inferido se etiqueta en la interfaz):* el borrador de aviso
+  siempre se muestra con la etiqueta "borrador generado por IA, no es asesoría legal".
+- *Condición 4 — SHADOW CLAUSE (el log de incidentes nunca se vuelve evidencia usada contra la
+  clínica en vez de a su favor):* no existe ningún endpoint público ni exportación automática del
+  log; el scope cut excluye explícitamente comunicación directa con autoridades; solo un
+  coordinador autorizado decide qué sale del sistema y hacia quién.
+- *Condición 5 (payer explícito):* cerrada arriba.
+
+**Uniqueness Rule — estado honesto:** el choque de Semana 8 con Cyber Shield (Emiliano) sigue sin
+resolverse con las calificaciones reales de Business Bending — ver el Blueprint. Este venture
+procede sobre esa base pendiente, no sobre una resolución inventada.
 
 ## Problema, en mis palabras
 
@@ -35,10 +67,10 @@ si la contraseña reportada aparece en bases de datos de contraseñas filtradas 
 Passwords, por k-anonimato: nunca se envía la contraseña real, solo un prefijo de su hash).
 Cada incidente arranca con un cronómetro de SLA de 30 minutos; si nadie de coordinación lo
 confirma en esa ventana, se auto-escala a "ESCALADO" solo por cálculo de tiempo, sin ningún
-proceso en segundo plano que pueda fallar. Un coordinador autenticado en `/panel` ve la cola
-ordenada por prioridad y SLA, y es la única persona que puede marcar un incidente como contenido
-o la notificación como enviada — el sistema clasifica y redacta borradores, nunca decide ni
-envía nada por sí mismo.
+proceso en segundo plano que pueda fallar. Un coordinador **autorizado** (no solo autenticado —
+ver el hallazgo de esta semana más abajo) en `/panel` ve la cola ordenada por prioridad y SLA, y
+es la única persona que puede marcar un incidente como contenido o la notificación como enviada
+— el sistema clasifica y redacta borradores, nunca decide ni envía nada por sí mismo.
 
 ## Mockup
 
@@ -78,8 +110,8 @@ flowchart TD
         s3[Guarda incidente,\ninicia cronometro SLA]
         s4[Calcula estado en cada\nlectura: activo o ESCALADO]
     end
-    subgraph COO[Coordinador humano]
-        c1[Inicia sesion\nSupabase Auth]
+    subgraph COO[Coordinador autorizado]
+        c1[Inicia sesion y pasa\nla lista blanca de correos]
         c2[Revisa cola por\nprioridad y SLA]
         c3[Confirma, marca contenido\no envia el aviso]
         c4[Unica persona que puede\ntomar una decision irreversible]
@@ -130,12 +162,13 @@ del Blueprint de mi equipo, no esta pieza de software.
 
 | Capa | Herramienta | Por qué |
 |---|---|---|
-| Frontend + backend | Next.js 16 (App Router) + TypeScript + Tailwind 4 | Mismo stack verificado en w07, cero curva de aprendizaje nueva |
+| Frontend + backend | Next.js 16 (App Router) + TypeScript + Tailwind 4 | Mismo stack verificado en w07/w11, cero curva de aprendizaje nueva |
 | Base de datos + auth | Supabase (Postgres, Auth, RLS) | Mismo patrón de cliente de servicio / cliente de sesión ya probado en producción |
-| Hosting | Vercel | `vercel.json` fija `framework: nextjs` desde el primer commit — evita el bug de Framework Preset de la semana pasada |
+| Autorización | Lista blanca de correos (`COORDINADORES_AUTORIZADOS`) | Autenticado ≠ autorizado — ver hallazgo de esta semana |
+| Hosting | Vercel | `vercel.json` fija `framework: nextjs` desde el primer commit |
 | LLM (Dragon Stack) | Google Gemini API (modelo Flash, nivel gratuito) | Clasifica severidad y redacta el borrador de aviso — nunca decide ni envía nada |
 | Seguridad (Dragon Stack) | Pwned Passwords API (k-anonimato, sin llave) | Revisa si una contraseña de prueba aparece en filtraciones conocidas, sin exponer la contraseña real |
-| Automatización (Dragon Stack) | Cálculo de estado por tiempo (sin cron) | El SLA se evalúa en cada lectura, igual que `estaActivo` en w07 — una fuente menos de fallas |
+| Automatización (Dragon Stack) | Cálculo de estado por tiempo (sin cron) | El SLA se evalúa en cada lectura — una fuente menos de fallas |
 | Validación | zod en cada formulario y ruta | Nada entra crudo a la base de datos ni al prompt del LLM |
 | Datos de la demo | 100% simulados, etiquetados | Ningún dato real de pacientes, ninguna contraseña real |
 
@@ -157,12 +190,24 @@ del Blueprint de mi equipo, no esta pieza de software.
    "marcar como enviada" que un coordinador humano acciona después de revisar el borrador.
 9. Revisar el esquema completo → ningún campo guarda un dato real de paciente; todo lo que entra
    es texto de prueba etiquetado como simulado.
+10. **Nuevo esta semana:** iniciar sesión con una cuenta válida de Supabase Auth que NO esté en
+    `COORDINADORES_AUTORIZADOS` → `/panel` redirige a `/panel/no-autorizado`, y una llamada
+    directa a `/api/panel/accion` con esa sesión responde 403, no 200.
 
-**Resultado del pase mecánico (04/10/2026):** los 9 tests pasaron contra
-`https://w08-primera-hora-x22e.vercel.app`, incluyendo el auto-escalado por SLA (verificado en
-producción: dos incidentes de prueba pasaron de "nuevo" a "ESCALADO" solo por el paso del tiempo,
-sin ninguna acción manual) y la verificación de que `/api/panel/accion` es la única puerta para
-confirmar, marcar contenido o marcar un aviso como enviado.
+**Resultado del pase mecánico original (04/10/2026):** los 9 tests pasaron contra
+`https://w08-primera-hora-x22e.vercel.app`, incluyendo el auto-escalado por SLA en producción.
+
+**Hallazgo y arreglo de esta semana (Venture Milestone):** `/panel` y `/api/panel/accion` solo
+verificaban "¿hay sesión de Supabase Auth?", no "¿esta persona es un coordinador autorizado?".
+Con registro por correo/contraseña, cualquier cuenta válida —incluida una creada directamente
+contra la API de Supabase, sin pasar por esta UI— pasaba la verificación y podía marcar
+incidentes como contenidos o avisos como enviados: exactamente la decisión irreversible que la
+Condición 1 del Blueprint dice que debe quedar en manos de un coordinador responsable, no de
+cualquier cuenta autenticada. Mismo patrón de bug que ya cacé en AguaClara (w11): un valor por
+defecto silencioso parado en el lugar de algo que debía declararse explícitamente. Arreglo:
+`src/lib/coordinadores.ts` — lista blanca por variable de entorno, niega por defecto si no hay
+nadie configurado — aplicada en `/panel/page.tsx` y en `/api/panel/accion/route.ts`. Verificado
+con `tsc --noEmit` y `eslint` limpios antes de redeploy (test 10 arriba).
 
 ## Security Floor (5 checks)
 
@@ -177,12 +222,11 @@ confirmar, marcar contenido o marcar un aviso como enviado.
 3. **RLS activado sin políticas públicas.** La tabla `incidentes` tiene Row Level Security
    activado y cero policies para `anon`/`authenticated` — toda lectura y escritura pasa
    exclusivamente por el servidor con la Service Role Key. No existe ningún endpoint que liste
-   incidentes sin pasar por `/panel` autenticado.
-4. **Ninguna decisión irreversible ocurre sola.** Confirmar, marcar contenido, marcar un aviso
-   como enviado o retirar un incidente solo pasan por `/api/panel/accion`, que exige una sesión
-   válida de Supabase Auth (`supabaseAuth.auth.getUser()`) antes de aplicar cualquier cambio.
-   Ningún proceso automático llama a esta ruta — el sistema clasifica y redacta, nunca decide ni
-   envía.
+   incidentes sin pasar por `/panel` autenticado **y autorizado**.
+4. **Ninguna decisión irreversible ocurre sola, y ahora solo la toma quien debe.** Confirmar,
+   marcar contenido, marcar un aviso como enviado o retirar un incidente solo pasan por
+   `/api/panel/accion`, que exige sesión válida **y** correo en `COORDINADORES_AUTORIZADOS`
+   (arreglado esta semana — ver el hallazgo arriba). Ningún proceso automático llama a esta ruta.
 5. **Degradación segura si algo externo falla.** Si Gemini no responde (saturación, red, límite
    del nivel gratuito) o Pwned Passwords falla, el envío del incidente nunca se cae: se usa una
    clasificación de respaldo clara ("no se pudo generar automáticamente") o el chequeo de

@@ -208,3 +208,43 @@ no evitando que algo salga mal alguna vez, sino evitando repetir el mismo error 
 | Pruebas mecánicas | 9/9 pasadas |
 | Hallazgos de Persona Test | 2 (1 mayor, corregido · 1 menor, documentado) |
 | Checks de Security Floor | 5/5 documentados |
+
+## Venture Milestone (Semana 12) — rebrand y hallazgo de autorización
+
+Esta fase no reconstruyó el producto desde cero — el Brief de esta semana pide explícitamente
+"CHARTER antes de reconstruir", no reinventar. Lo que cambió:
+
+1. **Identidad de venture.** El repo y el proyecto pasaron de `w08-primera-hora` a
+   `primera-hora` — mismo historial de git, mismo proyecto de Supabase, nuevo nombre que no
+   delata el número de semana. `docs/PACKET.md` se reescribió como carta de venture: quién paga
+   (Memo, vía su retainer mensual — antes no estaba dicho en ningún lado), y las Condiciones del
+   Blueprint de Team Bending honradas explícitamente, incluida la Shadow Clause.
+
+2. **Hallazgo real, no fabricado.** Al revisar `/api/panel/accion` para confirmar que la
+   Condición 1 ("ningún sistema decide solo") seguía cumplida, apareció un vacío distinto: el
+   código verificaba *sesión válida*, no *coordinador autorizado*. Con registro por
+   correo/contraseña de Supabase Auth, cualquier cuenta —incluida una creada directamente contra
+   la API de Supabase sin pasar por esta interfaz— pasaba la verificación y podía marcar
+   incidentes como contenidos o avisos como enviados. Mismo patrón que el bug de AguaClara
+   (w11): un valor por defecto silencioso ("autenticado") ocupando el lugar de algo que debía
+   declararse a propósito ("autorizado").
+
+3. **Arreglo.** `src/lib/coordinadores.ts`: lista blanca de correos por variable de entorno
+   (`COORDINADORES_AUTORIZADOS`), que niega por defecto si no hay nadie configurado. Aplicada en
+   `/panel/page.tsx` (redirige a `/panel/no-autorizado`) y en `/api/panel/accion/route.ts`
+   (responde 403). Verificado con `tsc --noEmit` y `eslint .` limpios antes de redeploy.
+
+4. **Pendiente, dicho sin rodeos:** la Uniqueness Rule (Cristina vs. Emiliano, ambos Semana 8)
+   sigue sin resolverse con calificaciones reales — el venture procede sobre esa base abierta,
+   consistente con el Blueprint del equipo, no sobre una resolución inventada aquí.
+
+## Resumen técnico de referencia (actualizado, Semana 12)
+
+| Elemento | Valor |
+|---|---|
+| URL en vivo (venture) | *pendiente — se actualiza tras el rename en Vercel, ver README* |
+| URL en vivo (histórica, w08) | `https://w08-primera-hora-x22e.vercel.app` |
+| Modelo de IA (final) | `gemini-3.8-flash` |
+| Hallazgo nuevo esta semana | Autenticado ≠ autorizado en `/panel` — corregido con lista blanca |
+| Pruebas mecánicas (Semana 12) | 10/10 (9 originales + 1 nueva, de autorización) |
+| Checks de Security Floor | 5/5 documentados, 1 reforzado (autorización) |

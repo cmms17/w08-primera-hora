@@ -1,7 +1,8 @@
-# Primera Hora (w08)
+# Primera Hora
 
-Triage de incidentes de brecha para el proveedor de TI de una pyme — Week 8, Business Bending
-(OPERATOR). Ver `docs/PACKET.md` para el diseño completo.
+Triage de incidentes de brecha para el proveedor de TI freelance de una pyme — venture de
+Cristina Meouchi, Weeks 12–17, Smart Business and Digital Commerce. Nace del ship de Business
+Bending Week 8 (OPERATOR); ver `docs/PACKET.md` para el diseño completo y la carta del venture.
 
 ## Stack
 
@@ -23,3 +24,5 @@ npm run dev
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `GEMINI_API_KEY`
+- `COORDINADORES_AUTORIZADOS` — correos autorizados para `/panel`, separados por coma.
+  Sin esta variable el panel queda cerrado para todos (niega por defecto).
