@@ -82,30 +82,46 @@ export async function clasificarIncidente(datos: {
         ? "La contraseña de prueba reportada no aparece en filtraciones conocidas."
         : "No se revisó ninguna contraseña para este incidente.";
 
-    const respuesta = await ai.models.generateContent({
-      model: MODELO,
-      contents:
-        "Eres un asistente de triage de incidentes de ciberseguridad para proveedores de TI " +
-        "que atienden pymes mexicanas (clínicas, despachos pequeños) sin equipo propio de " +
-        "seguridad. Clasificas severidad y redactas un borrador de aviso a pacientes, SIEMPRE " +
-        "en español, SIEMPRE dejando claro que es un borrador que un humano debe revisar antes " +
-        "de enviar. Nunca das asesoría legal definitiva — solo una redacción inicial razonable " +
-        "basada en que la LFPDPPP mexicana exige notificar a las personas afectadas.\n\n" +
-        `Sistema afectado: ${datos.sistemaAfectado}\n` +
-        `Tipo de dato en riesgo: ${datos.tipoDato}\n` +
-        `Descripción del proveedor de TI: ${datos.descripcion}\n` +
-        `Contraseña de prueba: ${contextoPassword}\n\n` +
-        "Clasifica la severidad y genera la checklist de contención inmediata y el borrador de aviso.",
-      config: {
-        tools: [{ functionDeclarations: [declaracionClasificar] }],
-        toolConfig: {
-          functionCallingConfig: {
-            mode: FunctionCallingConfigMode.ANY,
-            allowedFunctionNames: ["clasificar_incidente"],
+    // Límite de tiempo duro para la llamada a la IA. Sin esto, si Gemini
+    // responde lento (o nunca responde), este `await` se queda colgado
+    // indefinidamente y la ruta /api/triage nunca contesta al navegador —
+    // el usuario ve "Enviando..." para siempre, sin error y sin éxito.
+    // Con el límite, a los LIMITE_MS la IA se da por perdida y seguimos
+    // con CLASIFICACION_RESPALDO: el reporte se guarda siempre.
+    const LIMITE_MS = 8000;
+
+    const respuesta = await Promise.race([
+      ai.models.generateContent({
+        model: MODELO,
+        contents:
+          "Eres un asistente de triage de incidentes de ciberseguridad para proveedores de TI " +
+          "que atienden pymes mexicanas (clínicas, despachos pequeños) sin equipo propio de " +
+          "seguridad. Clasificas severidad y redactas un borrador de aviso a pacientes, SIEMPRE " +
+          "en español, SIEMPRE dejando claro que es un borrador que un humano debe revisar antes " +
+          "de enviar. Nunca das asesoría legal definitiva — solo una redacción inicial razonable " +
+          "basada en que la LFPDPPP mexicana exige notificar a las personas afectadas.\n\n" +
+          `Sistema afectado: ${datos.sistemaAfectado}\n` +
+          `Tipo de dato en riesgo: ${datos.tipoDato}\n` +
+          `Descripción del proveedor de TI: ${datos.descripcion}\n` +
+          `Contraseña de prueba: ${contextoPassword}\n\n` +
+          "Clasifica la severidad y genera la checklist de contención inmediata y el borrador de aviso.",
+        config: {
+          tools: [{ functionDeclarations: [declaracionClasificar] }],
+          toolConfig: {
+            functionCallingConfig: {
+              mode: FunctionCallingConfigMode.ANY,
+              allowedFunctionNames: ["clasificar_incidente"],
+            },
           },
         },
-      },
-    });
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Tiempo de espera agotado llamando a la IA (${LIMITE_MS}ms).`)),
+          LIMITE_MS
+        )
+      ),
+    ]);
 
     const llamada = respuesta.functionCalls?.[0];
     if (!llamada || !llamada.args) {
